@@ -1,9 +1,25 @@
 # .trivyignore
-# CVEs suppressed here must have a written justification.
-# Review this file on every dependency upgrade.
-# Format: CVE-YYYY-NNNNN  # reason; expires: YYYY-MM-DD
 
-# No suppressions at v0.1.0.
-# Add entries here only when a CVE has no fix available and
-# the vulnerability does not apply to our usage pattern.
-# Each suppression requires a PR comment explaining why.
+# CVEs suppressed here must have a written justification.
+
+# Review this file on every dependency upgrade.
+
+# Format: CVE-YYYY-NNNNN # reason; expires: YYYY-MM-DD
+
+# CVE-2026-6270 (@fastify/middie authentication bypass in child plugin scopes)
+
+# Fixed in @fastify/middie 9.3.2 which requires Fastify 5.
+
+# @nestjs/platform-fastify@10 pins Fastify 4 — no compatible fix available.
+
+# NOT exploitable in this service: we use no child plugin scopes with
+
+# authentication middleware. All routes are protected by NestJS guards at
+
+# the controller layer, not Fastify middleware. Revisit when upgrading to
+
+# NestJS 11 + Fastify 5.
+
+# expires: 2026-12-31
+
+CVE-2026-6270

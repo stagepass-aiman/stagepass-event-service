@@ -20,7 +20,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { getConnectionToken, MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { MongoDBContainer, StartedMongoDBContainer } from '@testcontainers/mongodb';
 import supertest from 'supertest';
 import type { Connection } from 'mongoose';
@@ -98,13 +98,12 @@ describe('EventsController (integration)', () => {
       ],
     }).compile();
 
-    app = module.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    app = module.createNestApplication<NestExpressApplication>();
     app.useGlobalPipes(
       new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true }),
     );
     app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
-    await app.getHttpAdapter().getInstance().ready();
 
     mongoConnection = module.get<Connection>(getConnectionToken());
   });
