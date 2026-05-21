@@ -1,0 +1,183 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write   # Required to push to GHCR (build log rule #17)
+
+jobs:
+
+  # ── 1. Secrets scan ─────────────────────────────────────────────────────────
+  # Build log rule: never use gitleaks-action (requires paid org license).
+  # Use the CLI directly.
+  secrets-scan:
+    name: Secrets scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install and run gitleaks
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz \
+            | tar -xz gitleaks
+          sudo mv gitleaks /usr/local/bin/
+          gitleaks detect --source . --verbose
+
+  # ── 2. Lint + format ─────────────────────────────────────────────────────────
+  lint:
+    name: Lint and format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+
+  # ── 3. Unit tests + coverage ──────────────────────────────────────────────────
+  unit-test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run unit tests with coverage
+        run: npm run test:cov
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+
+  # ── 4. Integration tests (Testcontainers) ─────────────────────────────────────
+  integration-test:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          # Testcontainers pulls images during CI — no pre-pull needed
+          TESTCONTAINERS_RYUK_DISABLED: 'false'
+
+  # ── 5. SAST (SonarQube) ───────────────────────────────────────────────────────
+  sast:
+    name: SAST
+    runs-on: ubuntu-latest
+    needs: [unit-test]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # SonarQube needs full git history for blame
+      - name: Download coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+      - name: SonarQube scan
+        uses: SonarSource/sonarqube-scan-action@v3
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+  # ── 6. SCA (dependency vulnerability scan) ────────────────────────────────────
+  sca:
+    name: SCA
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      # Build log rule: pin trivy-action to v0.36.0 or later — NEVER @master.
+      # Background: tags 0.0.1–0.34.2 were compromised March 19 2026.
+      - name: Trivy filesystem scan (SCA)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL'
+          ignore-unfixed: true
+          trivyignores: '.trivyignore'
+
+  # ── 7. Docker build + image scan ──────────────────────────────────────────────
+  build-and-scan:
+    name: Build and scan image
+    runs-on: ubuntu-latest
+    needs: [unit-test, integration-test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: ghcr.io/stagepass-aiman/stagepass-event-service:${{ github.sha }}
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Build log rule: pin trivy-action to v0.36.0 or later.
+      - name: Scan Docker image for CVEs
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ghcr.io/stagepass-aiman/stagepass-event-service:${{ github.sha }}
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL'
+          ignore-unfixed: true
+          trivyignores: '.trivyignore'
+
+      - name: Push image (main branch only)
+        if: github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/stagepass-aiman/stagepass-event-service:${{ github.sha }}
+            ghcr.io/stagepass-aiman/stagepass-event-service:latest
+
+  # ── Sentinel: ALL jobs must pass — this is what branch protection watches ────
+  # Build log rule: always add a sentinel `ci` job as the final job.
+  # Branch protection is configured with context "ci" — this job satisfies it.
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    needs: [secrets-scan, lint, unit-test, integration-test, sast, sca, build-and-scan]
+    steps:
+      - run: echo "All CI checks passed"

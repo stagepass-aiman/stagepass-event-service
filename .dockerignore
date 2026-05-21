@@ -1,0 +1,12 @@
+node_modules
+dist
+coverage
+.git
+*.md
+test
+pact
+.eslintrc.js
+.prettierrc
+jest.config.ts
+tsconfig.json
+tsconfig.build.json
