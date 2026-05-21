@@ -111,7 +111,7 @@ export class JwksService implements OnModuleInit {
       if (!decoded || typeof decoded !== 'object') {
         throw new UnauthorizedException('Malformed JWT: cannot decode header.');
       }
-      return decoded.header as Record<string, unknown>;
+      return decoded.header as unknown as Record<string, unknown>;
     } catch {
       throw new UnauthorizedException('Malformed JWT.');
     }
