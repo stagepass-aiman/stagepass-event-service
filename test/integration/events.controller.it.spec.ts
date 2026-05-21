@@ -79,16 +79,28 @@ describe('EventsController (integration)', () => {
         ConfigModule.forRoot({ isGlobal: true, load: [() => ({})] }),
         MongooseModule.forRoot(container.getConnectionString(), {
           dbName: 'event_db_test',
-          directConnection: true, // Required for single-node MongoDB container
+          directConnection: true,
         }),
         MongooseModule.forFeature([{ name: EventEntity.name, schema: EventEntitySchema }]),
         EventsModule,
       ],
+      providers: [
+        // Provide the global dependencies that EventsModule needs
+        // but that aren't imported via their modules in this test context
+        {
+          provide: KafkaProducerService,
+          useValue: mockKafkaProducer,
+        },
+        {
+          provide: JwksService,
+          useValue: mockJwksService,
+        },
+      ],
     })
-      .overrideProvider(JwksService)
-      .useValue(mockJwksService)
       .overrideProvider(KafkaProducerService)
       .useValue(mockKafkaProducer)
+      .overrideProvider(JwksService)
+      .useValue(mockJwksService)
       .compile();
 
     app = module.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
@@ -97,20 +109,24 @@ describe('EventsController (integration)', () => {
     );
     app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
+    mongoConnection = module.get<Connection>(getConnectionToken());
     await app.getHttpAdapter().getInstance().ready();
 
     mongoConnection = module.get<Connection>(getConnectionToken());
   });
 
   afterAll(async () => {
-    await mongoConnection.dropDatabase();
+    if (mongoConnection?.db) {
+      await mongoConnection.dropDatabase();
+    }
     await app.close();
     await container.stop();
   });
 
   afterEach(async () => {
-    // Clear collections between tests for isolation
-    await mongoConnection.collection('events').deleteMany({});
+    if (mongoConnection?.db) {
+      await mongoConnection.collection('events').deleteMany({});
+    }
     mockJwksService.verifyToken.mockResolvedValue(DEFAULT_ORGANISER);
     mockKafkaProducer.publish.mockResolvedValue(undefined);
   });
