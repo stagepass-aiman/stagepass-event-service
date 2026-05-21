@@ -127,11 +127,12 @@ export class JwksService implements OnModuleInit {
       }
       return payload as JwtPayload;
     } catch (err) {
-      const message = err instanceof jwt.TokenExpiredError
-        ? 'JWT has expired.'
-        : err instanceof jwt.JsonWebTokenError
-          ? `JWT verification failed: ${err.message}`
-          : 'JWT verification failed.';
+      const message =
+        err instanceof jwt.TokenExpiredError
+          ? 'JWT has expired.'
+          : err instanceof jwt.JsonWebTokenError
+            ? `JWT verification failed: ${err.message}`
+            : 'JWT verification failed.';
       throw new UnauthorizedException(message);
     }
   }

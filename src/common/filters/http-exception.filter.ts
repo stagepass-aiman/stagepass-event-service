@@ -47,8 +47,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     // Extract traceId from the request if OpenTelemetry has set it.
     // Falls back to a random UUID so every error response is uniquely traceable.
-    const traceId =
-      (request.headers['x-trace-id'] as string | undefined) ?? randomUUID();
+    const traceId = (request.headers['x-trace-id'] as string | undefined) ?? randomUUID();
 
     let status: number;
     let title: string;
@@ -57,12 +56,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const responseBody = exception.getResponse();
-      title = typeof responseBody === 'object'
-        ? ((responseBody as Record<string, unknown>)['error'] as string | undefined) ?? exception.message
-        : exception.message;
-      detail = typeof responseBody === 'object'
-        ? ((responseBody as Record<string, unknown>)['message'] as string | undefined) ?? exception.message
-        : exception.message;
+      title =
+        typeof responseBody === 'object'
+          ? (((responseBody as Record<string, unknown>)['error'] as string | undefined) ??
+            exception.message)
+          : exception.message;
+      detail =
+        typeof responseBody === 'object'
+          ? (((responseBody as Record<string, unknown>)['message'] as string | undefined) ??
+            exception.message)
+          : exception.message;
     } else {
       // Unhandled exception — log it fully, return generic 500 to client.
       status = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -88,9 +91,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
       traceId,
     };
 
-    void reply
-      .status(status)
-      .header('Content-Type', 'application/problem+json')
-      .send(body);
+    void reply.status(status).header('Content-Type', 'application/problem+json').send(body);
   }
 }

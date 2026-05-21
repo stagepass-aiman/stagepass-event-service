@@ -22,10 +22,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { getConnectionToken, MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
-import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { MongoDBContainer, StartedMongoDBContainer } from 'testcontainers';
 import supertest from 'supertest';
 import type { Connection } from 'mongoose';
@@ -39,7 +36,7 @@ import { EventEntity, EventEntitySchema } from '../../src/events/schemas/event.s
 
 // ── Mock JWT payload — simulates a verified token ───────────────────────────
 
-function makeToken(payload: Partial<JwtPayload> = {}): string {
+function makeToken(_payload: Partial<JwtPayload> = {}): string {
   // In integration tests we mock JwksService.verifyToken() rather than
   // generating real JWTs. The token value itself doesn't matter — the guard
   // calls verifyToken() which is stubbed to return our payload.
@@ -84,9 +81,7 @@ describe('EventsController (integration)', () => {
           dbName: 'event_db_test',
           directConnection: true, // Required for single-node MongoDB container
         }),
-        MongooseModule.forFeature([
-          { name: EventEntity.name, schema: EventEntitySchema },
-        ]),
+        MongooseModule.forFeature([{ name: EventEntity.name, schema: EventEntitySchema }]),
         EventsModule,
       ],
     })
@@ -97,7 +92,9 @@ describe('EventsController (integration)', () => {
       .compile();
 
     app = module.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
-    app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true }),
+    );
     app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
@@ -214,7 +211,11 @@ describe('EventsController (integration)', () => {
       const eventId = createResponse.body.eventId as string;
 
       // Switch caller to CUSTOMER
-      const customer: JwtPayload = { ...DEFAULT_ORGANISER, sub: 'customer-1', role: UserRole.CUSTOMER };
+      const customer: JwtPayload = {
+        ...DEFAULT_ORGANISER,
+        sub: 'customer-1',
+        role: UserRole.CUSTOMER,
+      };
       mockJwksService.verifyToken.mockResolvedValue(customer);
 
       const response = await supertest(app.getHttpServer())

@@ -36,7 +36,7 @@ export class SectionsController {
   async listSections(
     @Param('eventId', ParseUUIDPipe) eventId: string,
     @CurrentUser() caller: JwtPayload,
-  ) {
+  ): Promise<unknown> {
     const sections = await this.sectionsService.listSections(eventId, caller);
     return { items: sections };
   }
@@ -48,7 +48,7 @@ export class SectionsController {
     @Param('eventId', ParseUUIDPipe) eventId: string,
     @Body() dto: CreateSectionDto,
     @CurrentUser() caller: JwtPayload,
-  ) {
+  ): Promise<unknown> {
     return this.sectionsService.createSection(eventId, dto, caller);
   }
 }

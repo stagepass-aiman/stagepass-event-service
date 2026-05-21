@@ -21,12 +21,7 @@
  * and the Auth Service — if Auth is slow, every service is slow.
  */
 
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import { JwksService } from '../../jwks/jwks.service';
 import type { JwtPayload } from '../types/jwt-payload.type';

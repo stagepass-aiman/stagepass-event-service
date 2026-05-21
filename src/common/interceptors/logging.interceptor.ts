@@ -20,13 +20,7 @@
  * Business logic should not know it's being logged. The interceptor handles it.
  */
 
-import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  Logger,
-  NestInterceptor,
-} from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { Observable, tap } from 'rxjs';
 import type { JwtPayload } from '../types/jwt-payload.type';
@@ -36,9 +30,7 @@ export class LoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger('HTTP');
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const request = context
-      .switchToHttp()
-      .getRequest<FastifyRequest & { user?: JwtPayload }>();
+    const request = context.switchToHttp().getRequest<FastifyRequest & { user?: JwtPayload }>();
     const reply = context.switchToHttp().getResponse<FastifyReply>();
 
     const startMs = Date.now();

@@ -23,7 +23,13 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
-import { EventEntity, EventDocument, EventStatus, SectionSubDoc, PricingTierSubDoc } from '../schemas/event.schema';
+import {
+  EventEntity,
+  EventDocument,
+  EventStatus,
+  SectionSubDoc,
+  PricingTierSubDoc,
+} from '../schemas/event.schema';
 import type {
   CreateEventDto,
   UpdateEventDto,
@@ -51,11 +57,7 @@ export class EventsRepository {
     private readonly eventModel: Model<EventDocument>,
   ) {}
 
-  async create(
-    dto: CreateEventDto,
-    organiserId: string,
-    venueId: string,
-  ): Promise<EventDocument> {
+  async create(dto: CreateEventDto, organiserId: string, venueId: string): Promise<EventDocument> {
     const event = new this.eventModel({
       eventId: uuidv4(),
       venueBookingId: dto.venueBookingId,
@@ -105,11 +107,7 @@ export class EventsRepository {
     extra?: Partial<EventDocument>,
   ): Promise<EventDocument | null> {
     return this.eventModel
-      .findOneAndUpdate(
-        { eventId },
-        { $set: { status, ...extra } },
-        { new: true },
-      )
+      .findOneAndUpdate({ eventId }, { $set: { status, ...extra } }, { new: true })
       .exec();
   }
 
@@ -168,7 +166,10 @@ export class EventsRepository {
     const lastItem = page[page.length - 1];
     const nextCursor =
       hasMore && lastItem
-        ? this.encodeCursor({ eventDate: lastItem.eventDate.toISOString(), eventId: lastItem.eventId })
+        ? this.encodeCursor({
+            eventDate: lastItem.eventDate.toISOString(),
+            eventId: lastItem.eventId,
+          })
         : null;
 
     return {
@@ -187,11 +188,7 @@ export class EventsRepository {
       colour: dto.colour,
     };
     return this.eventModel
-      .findOneAndUpdate(
-        { eventId },
-        { $push: { sections: section } },
-        { new: true },
-      )
+      .findOneAndUpdate({ eventId }, { $push: { sections: section } }, { new: true })
       .exec();
   }
 
@@ -208,11 +205,7 @@ export class EventsRepository {
       createdAt: new Date(),
     };
     return this.eventModel
-      .findOneAndUpdate(
-        { eventId },
-        { $push: { pricingTiers: tier } },
-        { new: true },
-      )
+      .findOneAndUpdate({ eventId }, { $push: { pricingTiers: tier } }, { new: true })
       .exec();
   }
 
@@ -222,7 +215,9 @@ export class EventsRepository {
 
   private decodeCursor(encoded: string): DecodedCursor | null {
     try {
-      const decoded = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8')) as DecodedCursor;
+      const decoded = JSON.parse(
+        Buffer.from(encoded, 'base64url').toString('utf8'),
+      ) as DecodedCursor;
       return decoded;
     } catch {
       return null;

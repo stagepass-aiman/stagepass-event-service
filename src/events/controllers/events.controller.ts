@@ -65,7 +65,7 @@ export class EventsController {
   async createEvent(
     @Body() dto: CreateEventDto,
     @CurrentUser() caller: JwtPayload,
-  ) {
+  ): Promise<unknown> {
     return this.eventsService.createEvent(dto, caller);
   }
 
@@ -77,7 +77,7 @@ export class EventsController {
   async listEvents(
     @Query() query: ListEventsQueryDto,
     @CurrentUser() caller: JwtPayload,
-  ) {
+  ): Promise<unknown> {
     return this.eventsService.listEvents(query, caller);
   }
 
@@ -89,7 +89,7 @@ export class EventsController {
   async getEvent(
     @Param('eventId', ParseUUIDPipe) eventId: string,
     @CurrentUser() caller: JwtPayload,
-  ) {
+  ): Promise<unknown> {
     return this.eventsService.getEvent(eventId, caller);
   }
 
@@ -103,7 +103,7 @@ export class EventsController {
     @Param('eventId', ParseUUIDPipe) eventId: string,
     @Body() dto: UpdateEventDto,
     @CurrentUser() caller: JwtPayload,
-  ) {
+  ): Promise<unknown> {
     return this.eventsService.updateEvent(eventId, dto, caller);
   }
 
@@ -117,7 +117,7 @@ export class EventsController {
   async publishEvent(
     @Param('eventId', ParseUUIDPipe) eventId: string,
     @CurrentUser() caller: JwtPayload,
-  ) {
+  ): Promise<unknown> {
     return this.eventsService.publishEvent(eventId, caller);
   }
 
@@ -133,7 +133,7 @@ export class EventsController {
     @Param('eventId', ParseUUIDPipe) eventId: string,
     @Body() dto: CancelEventDto,
     @CurrentUser() caller: JwtPayload,
-  ) {
+  ): Promise<unknown> {
     return this.eventsService.cancelEvent(eventId, dto, caller);
   }
 
@@ -147,7 +147,7 @@ export class EventsController {
     @Param('eventId', ParseUUIDPipe) eventId: string,
     @Body() dto: PostponeEventDto,
     @CurrentUser() caller: JwtPayload,
-  ) {
+  ): Promise<unknown> {
     return this.eventsService.postponeEvent(eventId, dto, caller);
   }
 }

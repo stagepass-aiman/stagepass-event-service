@@ -31,16 +31,34 @@ import {
   PublishPreconditionsNotMetException,
   TenantIsolationException,
 } from '../../src/events/exceptions/event.exceptions';
-import type { CreateEventDto, CancelEventDto, PostponeEventDto } from '../../src/events/dto/event.dto';
+import type {
+  CreateEventDto,
+  CancelEventDto,
+  PostponeEventDto,
+} from '../../src/events/dto/event.dto';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makeOrganiserCaller(sub = 'organiser-uuid-1'): JwtPayload {
-  return { sub, email: 'org@test.com', role: UserRole.ORGANISER, jti: 'jti', iat: 0, exp: 9999999999 };
+  return {
+    sub,
+    email: 'org@test.com',
+    role: UserRole.ORGANISER,
+    jti: 'jti',
+    iat: 0,
+    exp: 9999999999,
+  };
 }
 
 function makeAdminCaller(): JwtPayload {
-  return { sub: 'admin-uuid', email: 'admin@test.com', role: UserRole.ADMIN, jti: 'jti', iat: 0, exp: 9999999999 };
+  return {
+    sub: 'admin-uuid',
+    email: 'admin@test.com',
+    role: UserRole.ADMIN,
+    jti: 'jti',
+    iat: 0,
+    exp: 9999999999,
+  };
 }
 
 function makeEvent(overrides: Partial<EventDocument> = {}): EventDocument {
@@ -66,11 +84,16 @@ function makeEvent(overrides: Partial<EventDocument> = {}): EventDocument {
 function makePublishableEvent(): EventDocument {
   return makeEvent({
     sections: [{ sectionId: 's1', name: 'GA', layoutSectionRef: 'ga', pricingTierId: 't1' }],
-    pricingTiers: [{
-      tierId: 't1', name: 'General', soldCount: 0, createdAt: new Date(),
-      priceAmount: { toString: () => '500.0000' } as never,
-      priceCurrency: 'INR',
-    }],
+    pricingTiers: [
+      {
+        tierId: 't1',
+        name: 'General',
+        soldCount: 0,
+        createdAt: new Date(),
+        priceAmount: { toString: () => '500.0000' } as never,
+        priceCurrency: 'INR',
+      },
+    ],
   } as Partial<EventDocument>);
 }
 
@@ -172,7 +195,9 @@ describe('EventsService', () => {
       repository.findById.mockResolvedValue(draftEvent);
       const customer: JwtPayload = { ...makeOrganiserCaller(), role: UserRole.CUSTOMER };
 
-      await expect(service.getEvent('event-uuid-1', customer)).rejects.toThrow(EventNotFoundException);
+      await expect(service.getEvent('event-uuid-1', customer)).rejects.toThrow(
+        EventNotFoundException,
+      );
     });
 
     it('throws TenantIsolationException if Organiser accesses another Organiser event', async () => {
@@ -198,7 +223,7 @@ describe('EventsService', () => {
     it('transitions DRAFT → PUBLISHED and publishes EventPublished', async () => {
       const event = makePublishableEvent();
       const published = { ...event, status: EventStatus.PUBLISHED, publishedAt: new Date() };
-      repository.findById.mockResolvedValue(event as EventDocument);
+      repository.findById.mockResolvedValue(event);
       repository.updateStatus.mockResolvedValue(published as unknown as EventDocument);
 
       const result = await service.publishEvent(event.eventId, makeOrganiserCaller());
@@ -291,7 +316,10 @@ describe('EventsService', () => {
     });
 
     it('allows Admin to cancel any event (not just their own)', async () => {
-      const event = makeEvent({ organiserId: 'different-organiser', status: EventStatus.PUBLISHED });
+      const event = makeEvent({
+        organiserId: 'different-organiser',
+        status: EventStatus.PUBLISHED,
+      });
       const updated = { ...event, status: EventStatus.CANCELLED };
       repository.findById.mockResolvedValue(event);
       repository.updateStatus.mockResolvedValue(updated as unknown as EventDocument);

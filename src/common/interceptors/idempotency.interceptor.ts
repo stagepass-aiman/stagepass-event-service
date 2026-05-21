@@ -28,12 +28,7 @@
  * GET requests are idempotent by definition.
  */
 
-import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  NestInterceptor,
-} from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { Observable, of, tap } from 'rxjs';
 
