@@ -23,7 +23,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { getConnectionToken, MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
-import { MongoDBContainer, StartedMongoDBContainer } from 'testcontainers';
+import { MongoDBContainer, StartedMongoDBContainer } from '@testcontainers/mongodb';
 import supertest from 'supertest';
 import type { Connection } from 'mongoose';
 import { EventsModule } from '../../src/events/events.module';
