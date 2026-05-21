@@ -22,7 +22,7 @@ import { getConnectionToken, MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { MongoDBContainer, StartedMongoDBContainer } from '@testcontainers/mongodb';
-import supertest from 'supertest';
+import * as supertest from 'supertest';
 import type { Connection } from 'mongoose';
 
 import { EventsController } from '../../src/events/controllers/events.controller';
