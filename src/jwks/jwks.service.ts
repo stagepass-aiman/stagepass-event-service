@@ -111,7 +111,7 @@ export class JwksService implements OnModuleInit {
       if (!decoded || typeof decoded !== 'object') {
         throw new UnauthorizedException('Malformed JWT: cannot decode header.');
       }
-      return decoded.header as Record<string, unknown>;
+      return decoded.header as unknown as Record<string, unknown>;
     } catch {
       throw new UnauthorizedException('Malformed JWT.');
     }
@@ -127,11 +127,12 @@ export class JwksService implements OnModuleInit {
       }
       return payload as JwtPayload;
     } catch (err) {
-      const message = err instanceof jwt.TokenExpiredError
-        ? 'JWT has expired.'
-        : err instanceof jwt.JsonWebTokenError
-          ? `JWT verification failed: ${err.message}`
-          : 'JWT verification failed.';
+      const message =
+        err instanceof jwt.TokenExpiredError
+          ? 'JWT has expired.'
+          : err instanceof jwt.JsonWebTokenError
+            ? `JWT verification failed: ${err.message}`
+            : 'JWT verification failed.';
       throw new UnauthorizedException(message);
     }
   }

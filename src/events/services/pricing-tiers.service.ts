@@ -45,9 +45,7 @@ export class PricingTiersService {
 
     // New tiers can be added to DRAFT or PUBLISHED events (PRD §6.2).
     // CANCELLED events cannot be modified.
-    if (
-      event.status === EventStatus.CANCELLED
-    ) {
+    if (event.status === EventStatus.CANCELLED) {
       throw new EventStateConflictException(
         event.status,
         'DRAFT or PUBLISHED',

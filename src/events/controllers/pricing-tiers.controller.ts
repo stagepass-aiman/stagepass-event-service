@@ -36,7 +36,7 @@ export class PricingTiersController {
   async listPricingTiers(
     @Param('eventId', ParseUUIDPipe) eventId: string,
     @CurrentUser() caller: JwtPayload,
-  ) {
+  ): Promise<unknown> {
     const tiers = await this.pricingTiersService.listPricingTiers(eventId, caller);
     return { items: tiers };
   }
@@ -48,7 +48,7 @@ export class PricingTiersController {
     @Param('eventId', ParseUUIDPipe) eventId: string,
     @Body() dto: CreatePricingTierDto,
     @CurrentUser() caller: JwtPayload,
-  ) {
+  ): Promise<unknown> {
     return this.pricingTiersService.createPricingTier(eventId, dto, caller);
   }
 }

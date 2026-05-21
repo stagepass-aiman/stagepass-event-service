@@ -22,11 +22,7 @@
  *   (do not reveal that the event exists for another organiser).
  */
 
-import {
-  ForbiddenException,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { EventsRepository } from '../repositories/events.repository';
 import { EventStatus, type EventDocument } from '../schemas/event.schema';
@@ -104,10 +100,10 @@ export class EventsService {
     // Role-based scope filter:
     const scopeFilter =
       caller.role === UserRole.CUSTOMER
-        ? { status: EventStatus.PUBLISHED }           // Customers see published only
+        ? { status: EventStatus.PUBLISHED } // Customers see published only
         : caller.role === UserRole.ORGANISER
-          ? { organiserId: caller.sub }               // Organisers see their own
-          : {};                                       // Admins see all
+          ? { organiserId: caller.sub } // Organisers see their own
+          : {}; // Admins see all
 
     return this.eventsRepository.findPaginated(query, scopeFilter, query.pageSize ?? 20);
   }
@@ -157,10 +153,7 @@ export class EventsService {
     this.assertOrganiserOwns(event, caller.sub);
 
     // Only DRAFT and POSTPONED events can be published.
-    if (
-      event.status !== EventStatus.DRAFT &&
-      event.status !== EventStatus.POSTPONED
-    ) {
+    if (event.status !== EventStatus.DRAFT && event.status !== EventStatus.POSTPONED) {
       throw new EventStateConflictException(
         event.status,
         `${EventStatus.DRAFT} or ${EventStatus.POSTPONED}`,
@@ -247,7 +240,10 @@ export class EventsService {
     // Idempotency: already cancelled → return current state, no duplicate Kafka message.
     // (NFR-REL-011)
     if (event.status === EventStatus.CANCELLED) {
-      this.logger.warn({ eventId }, 'cancelEvent called on already-cancelled event — idempotent return');
+      this.logger.warn(
+        { eventId },
+        'cancelEvent called on already-cancelled event — idempotent return',
+      );
       return event;
     }
 
@@ -256,7 +252,11 @@ export class EventsService {
       event.status !== EventStatus.DRAFT &&
       event.status !== EventStatus.POSTPONED
     ) {
-      throw new EventStateConflictException(event.status, 'PUBLISHED/DRAFT/POSTPONED', 'cancelEvent');
+      throw new EventStateConflictException(
+        event.status,
+        'PUBLISHED/DRAFT/POSTPONED',
+        'cancelEvent',
+      );
     }
 
     const now = new Date();

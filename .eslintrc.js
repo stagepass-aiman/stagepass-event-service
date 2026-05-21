@@ -34,4 +34,27 @@ module.exports = {
     '@typescript-eslint/prefer-readonly': 'error',
     '@typescript-eslint/no-floating-promises': 'error',
   },
+  overrides: [
+    {
+      // Test files use Testcontainers, supertest, and Jest mocks which
+      // produce dynamic types incompatible with strict TypeScript rules.
+      // Production code rules remain fully enforced.
+      files: ['test/**/*.ts', '**/*.spec.ts'],
+      rules: {
+        '@typescript-eslint/no-unsafe-assignment': 'off',
+        '@typescript-eslint/no-unsafe-call': 'off',
+        '@typescript-eslint/no-unsafe-member-access': 'off',
+        '@typescript-eslint/no-unsafe-argument': 'off',
+        '@typescript-eslint/no-unsafe-return': 'off',
+        '@typescript-eslint/unbound-method': 'off',
+        '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+        '@typescript-eslint/explicit-function-return-type': 'off',
+        '@typescript-eslint/no-unused-vars': [
+          'error',
+          { argsIgnorePattern: '^_' },
+        ],
+      },
+    },
+  ],
 };
+

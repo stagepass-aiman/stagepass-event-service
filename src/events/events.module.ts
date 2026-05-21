@@ -10,11 +10,7 @@ import { PricingTiersService } from './services/pricing-tiers.service';
 import { EventsRepository } from './repositories/events.repository';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      { name: EventEntity.name, schema: EventEntitySchema },
-    ]),
-  ],
+  imports: [MongooseModule.forFeature([{ name: EventEntity.name, schema: EventEntitySchema }])],
   controllers: [EventsController, SectionsController, PricingTiersController],
   providers: [EventsService, SectionsService, PricingTiersService, EventsRepository],
 })
