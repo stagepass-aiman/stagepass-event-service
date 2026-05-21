@@ -3,12 +3,17 @@
  *
  * Integration tests: real MongoDB via Testcontainers, Kafka and JWKS mocked.
  *
- * WHY global providers must be provided directly in tests:
- *   KafkaModule and JwksModule are @Global() — in a test module that only
- *   imports EventsModule (not AppModule), the global modules are never loaded,
- *   so their providers are unknown tokens. overrideProvider() cannot override
- *   an unknown token. Solution: provide mocked services directly in the test
- *   module's providers array using the same injection token (the class itself).
+ * WHY we do not import EventsModule as a whole:
+ *   @Global() modules (KafkaModule, JwksModule) only register their providers
+ *   into the global scope when imported at the application root (AppModule).
+ *   In a test that creates a TestingModule without AppModule, the global context
+ *   does not exist — KafkaProducerService and JwksService tokens are unknown
+ *   to EventsModule's DI resolver regardless of how they are provided at the
+ *   test module root.
+ *
+ *   Solution: import EventsModule's internals explicitly (controllers, services,
+ *   repository) rather than the module itself. Provide mocked global services
+ *   directly. This gives the test full DI control without the module scoping problem.
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
@@ -19,7 +24,17 @@ import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify
 import { MongoDBContainer, StartedMongoDBContainer } from '@testcontainers/mongodb';
 import supertest from 'supertest';
 import type { Connection } from 'mongoose';
-import { EventsModule } from '../../src/events/events.module';
+
+import { EventsController } from '../../src/events/controllers/events.controller';
+import { SectionsController } from '../../src/events/controllers/sections.controller';
+import { PricingTiersController } from '../../src/events/controllers/pricing-tiers.controller';
+import { EventsService } from '../../src/events/services/events.service';
+import { SectionsService } from '../../src/events/services/sections.service';
+import { PricingTiersService } from '../../src/events/services/pricing-tiers.service';
+import { EventsRepository } from '../../src/events/repositories/events.repository';
+import { HealthController } from '../../src/health/health.controller';
+import { JwtAuthGuard } from '../../src/common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../src/common/guards/roles.guard';
 import { KafkaProducerService } from '../../src/kafka/kafka-producer.service';
 import { JwksService } from '../../src/jwks/jwks.service';
 import { HttpExceptionFilter } from '../../src/common/filters/http-exception.filter';
@@ -64,9 +79,20 @@ describe('EventsController (integration)', () => {
           directConnection: true,
         }),
         MongooseModule.forFeature([{ name: EventEntity.name, schema: EventEntitySchema }]),
-        EventsModule,
       ],
+      // Declare controllers and providers explicitly instead of importing EventsModule.
+      // This sidesteps the @Global() module scoping problem in test context.
+      controllers: [EventsController, SectionsController, PricingTiersController, HealthController],
       providers: [
+        // Domain providers
+        EventsService,
+        SectionsService,
+        PricingTiersService,
+        EventsRepository,
+        // Guards (used by controllers via @UseGuards)
+        JwtAuthGuard,
+        RolesGuard,
+        // Mocked global services
         { provide: KafkaProducerService, useValue: mockKafkaProducer },
         { provide: JwksService, useValue: mockJwksService },
       ],
@@ -102,6 +128,8 @@ describe('EventsController (integration)', () => {
     mockJwksService.verifyToken.mockResolvedValue(DEFAULT_ORGANISER);
     mockKafkaProducer.publish.mockResolvedValue(undefined);
   });
+
+  // ── POST /events ────────────────────────────────────────────────────────────
 
   describe('POST /events', () => {
     it('creates an event in DRAFT status', async () => {
@@ -147,6 +175,8 @@ describe('EventsController (integration)', () => {
       expect(response.status).toBe(400);
     });
   });
+
+  // ── GET /events/:eventId ─────────────────────────────────────────────────────
 
   describe('GET /events/:eventId', () => {
     it('returns a DRAFT event to its owner Organiser', async () => {
@@ -201,6 +231,8 @@ describe('EventsController (integration)', () => {
       expect(response.status).toBe(404);
     });
   });
+
+  // ── GET /health/live ─────────────────────────────────────────────────────────
 
   describe('GET /health/live', () => {
     it('returns 200 UP', async () => {
