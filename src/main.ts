@@ -22,7 +22,6 @@
 // to the top of the compiled file, so the ONLY way to guarantee OTel starts
 // before Nest loads those modules is to make tracing the first import line.
 // If your ESLint has `import/order`, add the disable line shown below.
-// eslint-disable-next-line import/order
 import './tracing';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
