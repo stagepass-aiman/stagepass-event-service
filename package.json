@@ -34,6 +34,7 @@
     "jwks-rsa": "^3.1.0",
     "kafkajs": "^2.2.4",
     "mongoose": "^8.5.3",
+    "nestjs-pino": "^4.6.1",
     "pino": "^9.3.2",
     "pino-http": "^10.3.0",
     "prom-client": "^15.1.3",
